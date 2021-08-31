@@ -1,4 +1,6 @@
 import datetime as dt
+from operator import itemgetter
+
 from fastapi import FastAPI, HTTPException, Query
 from database import engine, Session, Base, City, User, Picnic, PicnicRegistration
 from external_requests import CheckCityExisting, GetWeatherRequest
@@ -7,7 +9,7 @@ from models import RegisterUserRequest, UserModel
 app = FastAPI()
 
 
-@app.get('/create-city/', summary='Create City', description='Создание города по его названию')
+@app.post('/create-city/', summary='Create City', description='Создание города по его названию')
 def create_city(city: str = Query(description="Название города", default=None)):
     if city is None:
         raise HTTPException(status_code=400, detail='Параметр city должен быть указан')
@@ -25,28 +27,36 @@ def create_city(city: str = Query(description="Название города", d
     return {'id': city_object.id, 'name': city_object.name, 'weather': city_object.weather}
 
 
-@app.post('/get-cities/', summary='Get Cities')
+@app.get('/get-cities/', summary='Get Cities')
 def cities_list(q: str = Query(description="Название города", default=None)):
     """
     Получение списка городов
     """
-    cities = Session().query(City).all()
+    if q:
+        cities = Session().query(City).filter(City.name == q)
+    else:
+        cities = Session().query(City).all()
 
     return [{'id': city.id, 'name': city.name, 'weather': city.weather} for city in cities]
 
 
-@app.post('/users-list/', summary='')
-def users_list():
+@app.get('/users-list/', summary='')
+def users_list(q: str = Query(description="Возраст пользователя", default=None)):
     """
     Список пользователей
     """
     users = Session().query(User).all()
-    return [{
-        'id': user.id,
-        'name': user.name,
-        'surname': user.surname,
-        'age': user.age,
-    } for user in users]
+    base_users_list = [{
+            'id': user.id,
+            'name': user.name,
+            'surname': user.surname,
+            'age': user.age,
+        } for user in users]
+    if q in ["asc", "desc"]:
+        order = q == "desc"
+        return sorted(base_users_list, key=itemgetter("age"), reverse=order)
+    else:
+        return base_users_list
 
 
 @app.post('/register-user/', summary='CreateUser', response_model=UserModel)
@@ -89,8 +99,8 @@ def all_picnics(datetime: dt.datetime = Query(default=None, description='Вре�
     } for pic in picnics]
 
 
-@app.get('/picnic-add/', summary='Picnic Add', tags=['picnic'])
-def picnic_add(city_id: int = None, datetime: dt.datetime = None):
+@app.post('/picnic-add/', summary='Picnic Add', tags=['picnic'])
+def picnic_add(city_id: int, datetime: dt.datetime):
     p = Picnic(city_id=city_id, time=datetime)
     s = Session()
     s.add(p)
@@ -98,17 +108,38 @@ def picnic_add(city_id: int = None, datetime: dt.datetime = None):
 
     return {
         'id': p.id,
-        'city': Session().query(City).filter(City.id == p.id).first().name,
+        'city': Session().query(City).filter(City.id == p.city_id).first().name,
         'time': p.time,
     }
 
 
-@app.get('/picnic-register/', summary='Picnic Registration', tags=['picnic'])
-def register_to_picnic(*_, **__,):
+@app.post('/picnic-register/', summary='Picnic Registration', tags=['picnic'])
+def register_to_picnic(user_id: int, picnic_id: int):
     """
     Регистрация пользователя на пикник
     (Этот эндпойнт необходимо реализовать в процессе выполнения тестового задания)
     """
-    # TODO: Сделать логику
-    return ...
+    pr = PicnicRegistration(user_id=user_id, picnic_id=picnic_id)
+    s = Session()
+    s.add(pr)
+    s.commit()
+    return {
+        'id': pr.id,
+        "user": Session().query(User).filter(User.id == user_id).first(),
+        "picnic": Session().query(Picnic).filter(Picnic.id == picnic_id).first()
+    }
 
+# Минимиальный уровень Задача 4
+# 1) На данном этапе приложение имеет БД файлового типа (текстовый файл).
+# При увеличении количества запросов могут возникнуть проблемы при записи и чтении
+# данных от множества пользователей. Использование СУБД, скажем PostgresQL
+# решило бы эту проблему, так как в данном случае обработка множественных
+# обращений к данным реализована и при параллельном обращении включаются блокировки,
+# чтобы разграничить доступ к данным.
+# 2) При множестве запросов некоторые запросы могут дублироваться. В данном случае можно
+# было бы задуматься о кешировании данных.
+# 3) Также в данном случае база данных и приложение находятся в одном месте. В случае
+# увеличения нагрузки надо вынести на отдельный сервер. Также это позволит масштабировать
+# отдельно приложение и базу данных.
+# 4) Необходимо организовать очередь запросов.
+# 5) Ведение логов. В случае увеличения запросов нужно будет отслеживать нарастающий объем ошибок.

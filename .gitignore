@@ -1,0 +1,6 @@
+/.enw/
+/.idea/
+*__pycache__*
+test.db
+.env
+venv

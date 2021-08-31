@@ -1,9 +1,11 @@
 import requests
 
-
+# API key нужно разместить в файле .env, чтобы скрыть его от посторонних.
+# Также в случае смены ключа нужно будет сменить только значение переменной окружения.
 WEATHER_API_KEY = '99ba78ee79a2a24bc507362c5288a81b'
 
 
+# Класс не наследуется от другого класса. Нужно убрать ().
 class GetWeatherRequest():
     """
     Выполняет запрос на получение текущей погоды для города
@@ -23,6 +25,8 @@ class GetWeatherRequest():
         Returns:
 
         """
+        # Можно url написать в одну строку.
+        # В случае если длина строки нарушает pep8 можер ставить знак переноса строки.
         url = 'https://api.openweathermap.org/data/2.5/weather'
         url += '?units=metric'
         url += '&q=' + city
@@ -42,6 +46,7 @@ class GetWeatherRequest():
             r.raise_for_status()
         return r
 
+    # Можно сделать static
     def get_weather_from_response(self, response):
         """
         Достает погоду из ответа
@@ -70,6 +75,7 @@ class GetWeatherRequest():
             return weather
 
 
+# Класс не наследуется от другого класса. Нужно убрать ().
 class CheckCityExisting():
     """
     Проверка наличия города (запросом к серверу погоды)
@@ -81,6 +87,7 @@ class CheckCityExisting():
         """
         self.session = requests.Session()
 
+    # Можно сделать static
     def get_weather_url(self, city):
         """
         Генерирует url включая в него необходимые параметры
@@ -88,6 +95,8 @@ class CheckCityExisting():
             city: Город
         Returns:
 
+        # Можно url написать в одну строку.
+        # В случае если длина строки нарушает pep8 можер ставить знак переноса строки.
         """
         url = 'https://api.openweathermap.org/data/2.5/weather'
         url += '?units=metric'
