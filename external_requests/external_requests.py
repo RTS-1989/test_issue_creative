@@ -1,12 +1,15 @@
+import os
 import requests
 
+from dotenv import load_dotenv
 # API key нужно разместить в файле .env, чтобы скрыть его от посторонних.
 # Также в случае смены ключа нужно будет сменить только значение переменной окружения.
-WEATHER_API_KEY = '99ba78ee79a2a24bc507362c5288a81b'
+load_dotenv()
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
 
 # Класс не наследуется от другого класса. Нужно убрать ().
-class GetWeatherRequest():
+class GetWeatherRequest:
     """
     Выполняет запрос на получение текущей погоды для города
     """
@@ -17,7 +20,8 @@ class GetWeatherRequest():
         """
         self.session = requests.Session()
 
-    def get_weather_url(self, city):
+    @staticmethod
+    def get_weather_url(city):
         """
         Генерирует url включая в него необходимые параметры
         Args:
@@ -27,10 +31,7 @@ class GetWeatherRequest():
         """
         # Можно url написать в одну строку.
         # В случае если длина строки нарушает pep8 можер ставить знак переноса строки.
-        url = 'https://api.openweathermap.org/data/2.5/weather'
-        url += '?units=metric'
-        url += '&q=' + city
-        url += '&appid=' + WEATHER_API_KEY
+        url = 'https://api.openweathermap.org/data/2.5/weather?units=metric&q=' + city + '&appid=' + WEATHER_API_KEY
         return url
 
     def send_request(self, url):
@@ -47,7 +48,8 @@ class GetWeatherRequest():
         return r
 
     # Можно сделать static
-    def get_weather_from_response(self, response):
+    @staticmethod
+    def get_weather_from_response(response):
         """
         Достает погоду из ответа
         Args:
@@ -66,17 +68,17 @@ class GetWeatherRequest():
         Returns:
 
         """
-        url = self.get_weather_url(city)
+        url = GetWeatherRequest.get_weather_url(city)
         r = self.send_request(url)
         if r is None:
             return None
         else:
-            weather = self.get_weather_from_response(r)
+            weather = GetWeatherRequest.get_weather_from_response(r)
             return weather
 
 
 # Класс не наследуется от другого класса. Нужно убрать ().
-class CheckCityExisting():
+class CheckCityExisting:
     """
     Проверка наличия города (запросом к серверу погоды)
     """
@@ -88,7 +90,8 @@ class CheckCityExisting():
         self.session = requests.Session()
 
     # Можно сделать static
-    def get_weather_url(self, city):
+    @staticmethod
+    def get_weather_url(city):
         """
         Генерирует url включая в него необходимые параметры
         Args:
@@ -98,10 +101,7 @@ class CheckCityExisting():
         # Можно url написать в одну строку.
         # В случае если длина строки нарушает pep8 можер ставить знак переноса строки.
         """
-        url = 'https://api.openweathermap.org/data/2.5/weather'
-        url += '?units=metric'
-        url += '&q=' + city
-        url += '&appid=' + WEATHER_API_KEY
+        url = 'https://api.openweathermap.org/data/2.5/weather?units=metric&q=' + city + '&appid=' + WEATHER_API_KEY
         return url
 
     def send_request(self, url):
@@ -123,7 +123,7 @@ class CheckCityExisting():
         Returns:
 
         """
-        url = self.get_weather_url(city)
+        url = CheckCityExisting.get_weather_url(city)
         r = self.send_request(url)
         if r.status_code == 404:
             return False

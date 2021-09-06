@@ -2,9 +2,15 @@ import datetime as dt
 from operator import itemgetter
 
 from fastapi import FastAPI, HTTPException, Query
-from database import Session, City, User, Picnic, PicnicRegistration
-from external_requests import CheckCityExisting
-from models import RegisterUserRequest, UserModel, CityModel, PicnicModel, PicnicRegistrationModel
+from core.database import Session
+
+from city.model import City
+from user.model import User
+from picnic.model import Picnic, PicnicRegistration
+from external_requests.external_requests import CheckCityExisting
+from city.schema import CityModel
+from user.schema import RegisterUserRequest, UserModel
+from picnic.schema import PicnicModel, PicnicRegistrationModel
 
 app = FastAPI()
 
